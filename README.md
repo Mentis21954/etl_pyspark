@@ -12,8 +12,7 @@ Bash
     Add lines to bash
 - export SPARK_HOME=~/hadoop/spark-3.0.1                                
 - export PATH=$SPARK_HOME/bin:$PATH
-
-    source  ~/.bashrc
+- source  ~/.bashrc
 
 Setup Spark default configurations
 - cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf
