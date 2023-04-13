@@ -10,7 +10,7 @@ Bash
 - code ~/.bashrc
     
     Add lines to bash
-- export SPARK_HOME=~/hadoop/spark-3.0.1                                
+- export SPARK_HOME=~/hadoop/spark-3.3.2                                
 - export PATH=$SPARK_HOME/bin:$PATH
 - source  ~/.bashrc
 
