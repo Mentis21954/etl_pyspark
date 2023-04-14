@@ -1,78 +1,26 @@
 from pyspark.sql import SparkSession
-import requests
-import time
-
-LASTFM_API_KEY = '3f8f9f826bc4b0c8b529828839d38e4b'
-DISCOGS_API_KEY = 'hhNKFVCSbBWJATBYMyIxxjCJDSuDZMBGnCapdhOy'
+from extract import extract_info_from_artist, extract_titles_from_artist
+from transform import remove_wrong_values, drop_duplicates_titles, clean_the_text, integrate_data
+from load import load_to_database
 
 spark = SparkSession.builder \
              .appName("ETL") \
              .master("local[*]") \
              .getOrCreate()
 
-def extract_info_from_artist(artists_names):
-    # initialize a list of dictionaries for each artist 
-    artist_contents = []
-
-    # extract for all artists' informations from last fm and store as a a list of dictionaries
-    for name in artists_names:
-        url = ('https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=') + name + (
-            '&api_key=') + LASTFM_API_KEY + ('&format=json')
-        artist_info = requests.get(url).json()
-        artist_contents.append({'Artist': name, 'Content': artist_info['artist']['bio']['content']})
-        print('Search infrmation for artist {} ...'.format(name))
-
-    # return artist content as a dataframe for transform stage
-    return spark.createDataFrame(artist_contents)
-
-
-def extract_titles_from_artist(name):
-    # get the artist id from artist name
-    url = ('https://api.discogs.com/database/search?q=') + name + ('&{?type=artist}&token=') + DISCOGS_API_KEY
-    discogs_artist_info = requests.get(url).json()
-    id = discogs_artist_info['results'][0]['id']
-
-    print('Search releases from discogs.com for artist {} ...'.format(str(name)))
-
-    # with id get artist's releases
-    url = ('https://api.discogs.com/artists/') + str(id) + ('/releases')
-    releases = requests.get(url).json()
-
-    # store the releases/trracks info in a list of dictionaries
-    releases_info = []
-    for index in range(len(releases['releases'])):
-            url = releases['releases'][index]['resource_url']
-            source = requests.get(url).json()
-            # search if exists track's price
-            if 'lowest_price' in source.keys():  
-                if 'formats' in source.keys():
-                    releases_info.append({'Title': source['title'],
-                                      'Collaborations': releases['releases'][index]['artist'],
-                                      'Year': source['year'],
-                                      'Format': source['formats'][0]['name'],
-                                      'Discogs Price': source['lowest_price']})
-                else:
-                    releases_info.append({'Title': source['title'],
-                                      'Collaborations': releases['releases'][index]['artist'],
-                                      'Year': source['year'],
-                                      'Format': None,
-                                      'Discogs Price': source['lowest_price']})
-                print('Found ' + str((index + 1)) + ' titles!')
-
-            # sleep 3 secs to don't miss requests
-            time.sleep(1)
-
-    print('Find releases from artist ' + str(name) + ' with Discogs ID: ' + str(id))
-
-    # return artist's releases as a dataframe for transform stage
-    return spark.createDataFrame(releases_info)
-
-
+# find names from csv file
 df = spark.read.csv("spotify_artist_data.csv", header=True)
 artist_names = df.select('Artist Name').rdd.map(lambda r: r[0]).collect()
 
-content_df = extract_info_from_artist(artist_names[:1])
-print(content_df.show())
+# find info and return a dataframe
+artist_contents = extract_info_from_artist(artist_names[:2])
+# clean the text info from dataframe
+content_df = clean_the_text(artist_contents)
 
-releases_df = extract_titles_from_artist(artist_names[0])
-print(releases_df.show())
+for name in artist_names[:2]:
+    releases = extract_titles_from_artist(name)
+    releases_df = remove_wrong_values(releases)
+    releases_df = drop_duplicates_titles(releases_df)
+
+    data = integrate_data(content_df, releases_df, name)
+    load_to_database(data)
