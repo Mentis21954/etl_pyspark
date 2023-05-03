@@ -2,21 +2,23 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import regexp_replace
 
 spark = SparkSession.builder \
-             .appName("ETL") \
-             .master("local[*]") \
-             .getOrCreate()
+    .appName("ETL") \
+    .master("local[*]") \
+    .getOrCreate()
+
 
 def clean_the_text(content: dict):
     content_df = spark.createDataFrame(content)
 
     # remove new line commands, html tags and "", ''
-    content_df = content_df.withColumn('Content', regexp_replace('Content',r'\r+|\n+|\t+',''))
-    content_df = content_df.withColumn('Content', regexp_replace('Content',r'<[^<>]*>',''))
-    content_df = content_df.withColumn('Content', regexp_replace('Content',r'"',''))
-    content_df = content_df.withColumn('Content', regexp_replace('Content',r"'",''))
+    content_df = content_df.withColumn('Content', regexp_replace('Content', r'\r+|\n+|\t+', ''))
+    content_df = content_df.withColumn('Content', regexp_replace('Content', r'<[^<>]*>', ''))
+    content_df = content_df.withColumn('Content', regexp_replace('Content', r'"', ''))
+    content_df = content_df.withColumn('Content', regexp_replace('Content', r"'", ''))
     print('Clean the informations text')
 
     return content_df
+
 
 def remove_wrong_values(releases: dict):
     df = spark.createDataFrame(releases)
@@ -30,39 +32,42 @@ def remove_wrong_values(releases: dict):
 
     return df
 
+
 def merge_titles_data(releases_df, playcounts: dict):
     playcount_df = spark.createDataFrame(playcounts)
-    
+
     df = releases_df.join(playcount_df, on=['Title'], how='inner')
     print('Merge releases and playcounts data')
-    
+
     return df
+
 
 def drop_duplicates_titles(df):
     df = df.dropDuplicates(subset=['Title'])
     print('Find and remove the duplicates titles if exist!')
-    
+
     return df
 
-def integrate_data(content_df, releases_df, name):
-  # find content from dataframe for specific artist name
-  content = content_df.select('Content').where(content_df.Artist == name).rdd.map(lambda r: r[0]).collect()
 
-  col = {}
-  for c in releases_df.columns:
-    col.update({c: releases_df.select(c).rdd.map(lambda r: r[0]).collect()})
-  
-  # convert releases_df to a dict with titles as index
-  releases = {}
-  for index, title in enumerate(col['Title']):
-    releases.update({title: {'Collaborations': col['Collaborations'][index],
-                          'Year': col['Year'][index],
-                          'Format': col['Format'][index],
-                          'Discogs Price': col['Discogs Price'][index],
-                          'Lastfm Playcount': col['Lastfm Playcount'][index]}
-                    })
-  # final data
-  return {'Artist': name,
-          'Description': content[0],
-          'Releases': releases     
-          }
+def integrate_data(content_df, releases_df, name):
+    # find content from dataframe for specific artist name
+    content = content_df.select('Content').where(content_df.Artist == name).rdd.map(lambda r: r[0]).collect()
+
+    col = {}
+    for c in releases_df.columns:
+        col.update({c: releases_df.select(c).rdd.map(lambda r: r[0]).collect()})
+
+    # convert releases_df to a dict with titles as index
+    releases = {}
+    for index, title in enumerate(col['Title']):
+        releases.update({title: {'Collaborations': col['Collaborations'][index],
+                                 'Year': col['Year'][index],
+                                 'Format': col['Format'][index],
+                                 'Discogs Price': col['Discogs Price'][index],
+                                 'Lastfm Playcount': col['Lastfm Playcount'][index]}
+                         })
+    # final data
+    return {'Artist': name,
+            'Description': content[0],
+            'Releases': releases
+            }
