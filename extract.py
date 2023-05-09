@@ -58,9 +58,9 @@ def find_info_for_titles(releases: dict):
                                       'Year': source['year'],
                                       'Format': None,
                                       'Discogs Price': source['lowest_price']})
-        print('Found informations from discogs.com for {} titles'.format(str((index + 1))))
-        # sleep 3 secs to don't miss requests
-        time.sleep(3)
+            print('Found informations from discogs.com for title {}'.format(source['title']))
+            # sleep 3 secs to don't miss requests
+            time.sleep(3)
 
     # return artist's tracks for transform stage
     return releases_info

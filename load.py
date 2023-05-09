@@ -8,4 +8,4 @@ artists = db['artists']
 
 def load_to_database(data: dict):
     artists.insert_one(data)
-    print('Artist {} insert to DataBase!'.format(data['Artist']))
+    print('--- Artist {} insert to DataBase! ---'.format(data['Artist']))
