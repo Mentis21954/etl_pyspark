@@ -1,4 +1,5 @@
 import requests
+import time
 
 LASTFM_API_KEY = '3f8f9f826bc4b0c8b529828839d38e4b'
 DISCOGS_API_KEY = 'hhNKFVCSbBWJATBYMyIxxjCJDSuDZMBGnCapdhOy'
@@ -58,6 +59,8 @@ def find_info_for_titles(releases: dict):
                                       'Format': None,
                                       'Discogs Price': source['lowest_price']})
             print('Found informations from discogs.com for title {}'.format(source['title']))
+            # sleep 1 sec to don't miss requests
+            time.sleep(1)
 
     # return artist's tracks for transform stage
     return releases_info
