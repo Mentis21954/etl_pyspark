@@ -1,10 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import regexp_replace
 
-spark = SparkSession.builder \
-    .appName("ETL") \
-    .master("local[*]") \
-    .getOrCreate()
+spark = SparkSession.builder.appName("ETL").master("local[*]").getOrCreate()
 
 
 def clean_the_text(content: dict):
@@ -52,22 +49,12 @@ def drop_duplicates_titles(df):
 def integrate_data(content_df, releases_df, name):
     # find content from dataframe for specific artist name
     content = content_df.select('Content').where(content_df.Artist == name).rdd.map(lambda r: r[0]).collect()
+    # convert df to pandas df
+    releases_df = releases_df.toPandas()
+    releases_df = releases_df.set_index('Title')
 
-    col = {}
-    for c in releases_df.columns:
-        col.update({c: releases_df.select(c).rdd.map(lambda r: r[0]).collect()})
-
-    # convert releases_df to a dict with titles as index
-    releases = {}
-    for index, title in enumerate(col['Title']):
-        releases.update({title: {'Collaborations': col['Collaborations'][index],
-                                 'Year': col['Year'][index],
-                                 'Format': col['Format'][index],
-                                 'Discogs Price': col['Discogs Price'][index],
-                                 'Lastfm Playcount': col['Lastfm Playcount'][index]}
-                         })
     # final data
     return {'Artist': name,
             'Description': content[0],
-            'Releases': releases
+            'Releases': releases_df.to_dict('index')
             }

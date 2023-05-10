@@ -5,10 +5,7 @@ from extract import extract_info_from_artist, extract_titles_from_artist, extrac
 from transform import clean_the_text, remove_wrong_values, merge_titles_data, drop_duplicates_titles, integrate_data
 from load import load_to_database
 
-spark = SparkSession.builder \
-    .appName("ETL") \
-    .master("local[*]") \
-    .getOrCreate()
+spark = SparkSession.builder.appName("ETL").master("local[*]").getOrCreate()
 
 start_time = time.time()
 
