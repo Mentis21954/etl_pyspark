@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import regexp_replace
 
-spark = SparkSession.builder.appName("ETL").master("local[*]").getOrCreate()
+spark = SparkSession.builder.appName("ETL").master("local[*]").enableHiveSupport().getOrCreate()
 
 
 def clean_the_text(content: dict):
