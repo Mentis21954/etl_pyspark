@@ -5,7 +5,7 @@ from transform import clean_the_text, remove_wrong_values, merge_titles_data, dr
 from load import load_to_database
 
 spark = SparkSession.builder.appName("ETL").master("local[*]").enableHiveSupport().getOrCreate()
-print('--- Create Session ETL ---')
+print('--- Create ETL Session ---')
 
 # find names from csv file
 df = spark.read.csv("spotify_artist_data.csv", header=True)
@@ -29,5 +29,5 @@ for name in artist_names[:4]:
     # load
     load_to_database(data)
 
-x = input('--- Press any key to stop the Session ---')
 spark.stop()
+print('--- ETL Session Succeeded! Go to http://localhost:18080/ for Session Details ---')
