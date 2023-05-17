@@ -1,10 +1,11 @@
 from pyspark.sql import SparkSession
 from extract import extract_info_from_artist, extract_titles_from_artist, extract_playcounts_from_titles_by_artist, \
     find_info_for_titles
-from transform import clean_the_text, remove_wrong_values, merge_titles_data, drop_duplicates_titles, integrate_data
+from transform import clean_the_text, remove_wrong_values, merge_titles_data, sort_titles_by_price, \
+    drop_duplicates_titles, integrate_data
 from load import load_to_database
 
-spark = SparkSession.builder.appName("ETL").master("local[*]").enableHiveSupport().getOrCreate()
+spark = SparkSession.builder.appName("ETL").master("local[*]").getOrCreate()
 print('--- Create ETL Session ---')
 
 # find names from csv file
@@ -25,6 +26,7 @@ for name in artist_names[:4]:
     releases_df = remove_wrong_values(releases)
     releases_df = merge_titles_data(releases_df, playcounts)
     releases_df = drop_duplicates_titles(releases_df)
+    releases_df = sort_titles_by_price(releases_df)
     data = integrate_data(content_df, releases_df, name)
     # load
     load_to_database(data)

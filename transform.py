@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import regexp_replace
 
-spark = SparkSession.builder.appName("ETL").master("local[*]").enableHiveSupport().getOrCreate()
+spark = SparkSession.builder.appName("ETL").master("local[*]").getOrCreate()
 
 
 def clean_the_text(content: dict):
@@ -35,6 +35,14 @@ def merge_titles_data(releases_df, playcounts: dict):
 
     df = releases_df.join(playcount_df, on=['Title'], how='inner')
     print('Merge releases and playcounts data')
+
+    return df
+
+
+def sort_titles_by_price(df):
+    # sort descending
+    df = df.sort(['Discogs Price', 'Title'], ascending=[False])
+    print('Sort titles by highest value')
 
     return df
 
